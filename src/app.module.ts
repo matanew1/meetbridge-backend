@@ -2,7 +2,6 @@ import { Module } from "@nestjs/common";
 import { ConfigModule, ConfigService } from "@nestjs/config";
 import { TypeOrmModule } from "@nestjs/typeorm";
 import { CacheModule } from "@nestjs/cache-manager";
-import { ClientsModule, Transport } from "@nestjs/microservices";
 import * as redisStore from "cache-manager-redis-store";
 
 // Modules
@@ -71,37 +70,6 @@ import { MissedConnection } from "./entities/missed-connection.entity";
       isGlobal: true,
     }),
 
-    // Kafka Client
-    ClientsModule.registerAsync([
-      {
-        name: "KAFKA_SERVICE",
-        imports: [ConfigModule],
-        useFactory: (configService: ConfigService) => ({
-          transport: Transport.KAFKA,
-          options: {
-            client: {
-              brokers: configService
-                .get("KAFKA_BROKERS", "localhost:9092")
-                .split(","),
-              ssl: configService.get("KAFKA_SSL") === "true",
-              sasl: configService.get("KAFKA_USERNAME")
-                ? {
-                    mechanism: "plain",
-                    username: configService.get("KAFKA_USERNAME"),
-                    password: configService.get("KAFKA_PASSWORD"),
-                  }
-                : undefined,
-            },
-            consumer: {
-              groupId: "meetbridge-backend",
-              allowAutoTopicCreation: true,
-            },
-          },
-        }),
-        inject: [ConfigService],
-      },
-    ]),
-
     // Application Modules
     AuthModule,
     UsersModule,
@@ -110,7 +78,7 @@ import { MissedConnection } from "./entities/missed-connection.entity";
     ChatModule,
     NotificationsModule,
     MissedConnectionsModule,
-    KafkaModule,
+    // KafkaModule, // Temporarily disabled for testing
     RedisModule,
   ],
 })

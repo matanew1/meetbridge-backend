@@ -102,10 +102,9 @@ services:
       FRONTEND_URL: http://localhost:3000
     volumes:
       - .:/app
-      - /app/node_modules
     networks:
       - meetbridge-network
-    command: npm run start:dev
+    command: npm run start:prod
 
 volumes:
   postgres_data:
