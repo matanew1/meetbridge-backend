@@ -1,0 +1,110 @@
+name: CI/CD Pipeline
+
+on:
+    push:
+        branches: [main, develop]
+    pull_request:
+        branches: [main, develop]
+
+jobs:
+    test:
+        runs-on: ubuntu-latest
+
+        services:
+            postgres:
+                image: postgis/postgis:15-3.3
+                env:
+                    POSTGRES_DB: meetbridge_test
+                    POSTGRES_USER: postgres
+                    POSTGRES_PASSWORD: password
+                options: >-
+                    --health-cmd pg_isready
+                    --health-interval 10s
+                    --health-timeout 5s
+                    --health-retries 5
+
+            redis:
+                image: redis:7-alpine
+                options: >-
+                    --health-cmd "redis-cli ping"
+                    --health-interval 10s
+                    --health-timeout 5s
+                    --health-retries 5
+
+        steps:
+            - name: Checkout code
+              uses: actions/checkout@v4
+
+            - name: Setup Node.js
+              uses: actions/setup-node@v4
+              with:
+                  node-version: "18"
+                  cache: "npm"
+
+            - name: Install dependencies
+              run: npm ci
+
+            - name: Run linting
+              run: npm run lint
+
+            - name: Run tests
+              run: npm run test
+              env:
+                  DB_HOST: localhost
+                  DB_PORT: 5432
+                  DB_USERNAME: postgres
+                  DB_PASSWORD: password
+                  DB_NAME: meetbridge_test
+                  REDIS_HOST: localhost
+                  REDIS_PORT: 6379
+                  JWT_SECRET: test-jwt-secret
+                  NODE_ENV: test
+
+            - name: Generate coverage report
+              run: npm run test:cov
+
+            - name: Upload coverage to Codecov
+              uses: codecov/codecov-action@v3
+              with:
+                  file: ./coverage/lcov.info
+
+    build-and-deploy:
+        needs: test
+        runs-on: ubuntu-latest
+        if: github.ref == 'refs/heads/main'
+
+        steps:
+            - name: Checkout code
+              uses: actions/checkout@v4
+
+            - name: Setup Node.js
+              uses: actions/setup-node@v4
+              with:
+                  node-version: "18"
+                  cache: "npm"
+
+            - name: Install dependencies
+              run: npm ci
+
+            - name: Build application
+              run: npm run build
+
+            - name: Build Docker image
+              run: docker build -t meetbridge-backend:${{ github.sha }} .
+
+            - name: Login to Docker Hub
+              uses: docker/login-action@v3
+              with:
+                  username: ${{ secrets.DOCKER_USERNAME }}
+                  password: ${{ secrets.DOCKER_PASSWORD }}
+
+            - name: Push Docker image
+              run: |
+                  docker tag meetbridge-backend:${{ github.sha }} ${{ secrets.DOCKER_USERNAME }}/meetbridge-backend:latest
+                  docker push ${{ secrets.DOCKER_USERNAME }}/meetbridge-backend:latest
+
+            - name: Deploy to production
+              run: |
+                  echo "Deploying to production server..."
+                  # Add your deployment commands here
+                  # This could be SSH to your server, Kubernetes deployment, etc.
