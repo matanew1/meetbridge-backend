@@ -1,13 +1,16 @@
-import { Injectable, UnauthorizedException, ConflictException } from '@nestjs/common';
-import { JwtService } from '@nestjs/jwt';
-import { InjectRepository } from '@nestjs/typeorm';
-import { Repository } from 'typeorm';
-import * as bcrypt from 'bcrypt';
-import { User } from '../users/user.entity';
-import { KafkaService } from '../kafka/kafka.service';
-import { RedisService } from '../redis/redis.service';
-import { RegisterDto } from './dto/register.dto';
-import { LoginDto } from './dto/login.dto';
+import {
+  Injectable,
+  UnauthorizedException,
+  ConflictException,
+} from "@nestjs/common";
+import { JwtService } from "@nestjs/jwt";
+import { InjectRepository } from "@nestjs/typeorm";
+import { Repository } from "typeorm";
+import * as bcrypt from "bcrypt";
+import { User } from "../entities/user.entity";
+import { KafkaService } from "../kafka/kafka.service";
+import { RedisService } from "../redis/redis.service";
+import { RegisterDto, LoginDto } from "./dto/auth.dto";
 
 @Injectable()
 export class AuthService {
@@ -16,16 +19,20 @@ export class AuthService {
     private readonly userRepository: Repository<User>,
     private readonly jwtService: JwtService,
     private readonly kafkaService: KafkaService,
-    private readonly redisService: RedisService,
+    private readonly redisService: RedisService
   ) {}
 
-  async register(registerDto: RegisterDto): Promise<{ access_token: string; user: User }> {
+  async register(
+    registerDto: RegisterDto
+  ): Promise<{ access_token: string; user: User }> {
     const { email, password, ...userData } = registerDto;
 
     // Check if user already exists
-    const existingUser = await this.userRepository.findOne({ where: { email } });
+    const existingUser = await this.userRepository.findOne({
+      where: { email },
+    });
     if (existingUser) {
-      throw new ConflictException('User with this email already exists');
+      throw new ConflictException("User with this email already exists");
     }
 
     // Hash password
@@ -48,7 +55,6 @@ export class AuthService {
     await this.kafkaService.emitUserCreated(savedUser.id, {
       email: savedUser.email,
       name: savedUser.name,
-      age: savedUser.age,
     });
 
     // Generate JWT
@@ -61,28 +67,30 @@ export class AuthService {
     return { access_token, user: userWithoutPassword as User };
   }
 
-  async login(loginDto: LoginDto): Promise<{ access_token: string; user: User }> {
+  async login(
+    loginDto: LoginDto
+  ): Promise<{ access_token: string; user: User }> {
     const { email, password } = loginDto;
 
     // Find user
     const user = await this.userRepository.findOne({
       where: { email },
-      select: ['id', 'email', 'password', 'name', 'age', 'gender', 'isActive'],
+      select: ["id", "email", "password", "name", "gender", "isActive"],
     });
 
     if (!user) {
-      throw new UnauthorizedException('Invalid credentials');
+      throw new UnauthorizedException("Invalid credentials");
     }
 
     // Check password
     const isPasswordValid = await bcrypt.compare(password, user.password);
     if (!isPasswordValid) {
-      throw new UnauthorizedException('Invalid credentials');
+      throw new UnauthorizedException("Invalid credentials");
     }
 
     // Check if user is active
     if (!user.isActive) {
-      throw new UnauthorizedException('Account is deactivated');
+      throw new UnauthorizedException("Account is deactivated");
     }
 
     // Set user online in Redis
@@ -109,23 +117,16 @@ export class AuthService {
     await this.redisService.invalidateUserProfile(userId);
   }
 
-  async validateUser(userId: string): Promise<User | null> {
-    // Try to get from cache first
-    let user = await this.redisService.getUserProfile(userId);
+  async validateUser(email: string, password: string): Promise<User | null> {
+    const user = await this.userRepository.findOne({
+      where: { email, isActive: true },
+    });
 
-    if (!user) {
-      // Get from database
-      user = await this.userRepository.findOne({
-        where: { id: userId, isActive: true },
-      });
-
-      if (user) {
-        // Cache the user profile
-        await this.redisService.setUserProfile(userId, user);
-      }
+    if (user && (await bcrypt.compare(password, user.password))) {
+      return user;
     }
 
-    return user;
+    return null;
   }
 
   async refreshToken(user: User): Promise<{ access_token: string }> {

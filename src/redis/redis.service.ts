@@ -1,6 +1,6 @@
-import { Injectable, Inject } from '@nestjs/common';
-import { CACHE_MANAGER } from '@nestjs/cache-manager';
-import { Cache } from 'cache-manager';
+import { Injectable, Inject } from "@nestjs/common";
+import { CACHE_MANAGER } from "@nestjs/cache-manager";
+import { Cache } from "cache-manager";
 
 @Injectable()
 export class RedisService {
@@ -19,7 +19,7 @@ export class RedisService {
   }
 
   async reset(): Promise<void> {
-    await this.cacheManager.reset();
+    await this.cacheManager.clear();
   }
 
   // User-specific cache methods
@@ -41,7 +41,12 @@ export class RedisService {
     return this.get(cacheKey) || [];
   }
 
-  async setDiscoveryProfiles(userId: string, filters: any, profiles: any[], ttl = 180): Promise<void> {
+  async setDiscoveryProfiles(
+    userId: string,
+    filters: any,
+    profiles: any[],
+    ttl = 180
+  ): Promise<void> {
     const cacheKey = `discovery:${userId}:${JSON.stringify(filters)}`;
     await this.set(cacheKey, profiles, ttl);
   }
@@ -51,8 +56,8 @@ export class RedisService {
     // For now, we'll just clear a few common filter combinations
     const commonFilters = [
       {},
-      { gender: 'male' },
-      { gender: 'female' },
+      { gender: "male" },
+      { gender: "female" },
       { ageMin: 18, ageMax: 30 },
     ];
 
@@ -63,12 +68,20 @@ export class RedisService {
   }
 
   // Conversation cache methods
-  async getConversationMessages(conversationId: string, page = 1): Promise<any[]> {
+  async getConversationMessages(
+    conversationId: string,
+    page = 1
+  ): Promise<any[]> {
     const cacheKey = `conversation:messages:${conversationId}:${page}`;
     return this.get(cacheKey) || [];
   }
 
-  async setConversationMessages(conversationId: string, page: number, messages: any[], ttl = 300): Promise<void> {
+  async setConversationMessages(
+    conversationId: string,
+    page: number,
+    messages: any[],
+    ttl = 300
+  ): Promise<void> {
     const cacheKey = `conversation:messages:${conversationId}:${page}`;
     await this.set(cacheKey, messages, ttl);
   }
@@ -81,7 +94,11 @@ export class RedisService {
   }
 
   // Rate limiting
-  async checkRateLimit(key: string, limit: number, windowMs: number): Promise<boolean> {
+  async checkRateLimit(
+    key: string,
+    limit: number,
+    windowMs: number
+  ): Promise<boolean> {
     const cacheKey = `ratelimit:${key}`;
     const current = (await this.get<number>(cacheKey)) || 0;
 

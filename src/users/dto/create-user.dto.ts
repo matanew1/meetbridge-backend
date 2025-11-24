@@ -1,46 +1,44 @@
 import {
   IsEmail,
+  IsNotEmpty,
   IsString,
-  MinLength,
-  MaxLength,
-  IsOptional,
   IsDateString,
+  IsOptional,
+  IsArray,
+  IsUrl,
 } from "class-validator";
 
-export class RegisterDto {
+export class CreateUserDto {
   @IsEmail()
+  @IsNotEmpty()
   email: string;
 
   @IsString()
-  @MinLength(8)
-  @MaxLength(100)
+  @IsNotEmpty()
   password: string;
 
   @IsString()
-  @MinLength(2)
-  @MaxLength(50)
+  @IsNotEmpty()
   name: string;
 
   @IsDateString()
+  @IsNotEmpty()
   dateOfBirth: string;
 
   @IsString()
+  @IsNotEmpty()
   gender: string;
 
-  @IsOptional()
   @IsString()
-  @MaxLength(500)
+  @IsOptional()
   bio?: string;
 
-  @IsOptional()
+  @IsArray()
   @IsString({ each: true })
+  @IsOptional()
   interests?: string[];
-}
 
-export class LoginDto {
-  @IsEmail()
-  email: string;
-
-  @IsString()
-  password: string;
+  @IsUrl()
+  @IsOptional()
+  profilePictureUrl?: string;
 }
