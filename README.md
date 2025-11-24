@@ -1,5 +1,7 @@
 # MeetBridge Backend
 
+[![Docker Image CI](https://github.com/matanew1/meetbridge-backend/actions/workflows/docker-image.yml/badge.svg)](https://github.com/matanew1/meetbridge-backend/actions/workflows/docker-image.yml)
+
 A modern, scalable dating app backend built with **NestJS**, **PostgreSQL + PostGIS**, **Redis**, and **Kafka**. Features real-time chat, geospatial matching, event-driven architecture, and comprehensive API documentation.
 
 ## 🏗️ Architecture Overview
@@ -815,5 +817,6 @@ This project is licensed under the MIT License - see the [LICENSE](LICENSE) file
 - **Website**: [https://meetbridge.com](https://meetbridge.com)
 
 ---
+
 
 **Built with ❤️ for modern dating experiences**
