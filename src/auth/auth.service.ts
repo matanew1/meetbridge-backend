@@ -57,9 +57,14 @@ export class AuthService {
       name: savedUser.name,
     });
 
-    // Generate JWT
+    // Generate JWT and store in Redis
     const payload = { sub: savedUser.id, email: savedUser.email };
     const access_token = this.jwtService.sign(payload);
+    await this.redisService.setToken(
+      `access_token:${savedUser.id}`,
+      access_token,
+      3600
+    ); // 1 hour
 
     // Remove password from response
     const { password: _, ...userWithoutPassword } = savedUser;
@@ -67,41 +72,22 @@ export class AuthService {
     return { access_token, user: userWithoutPassword as User };
   }
 
-  async login(
-    loginDto: LoginDto
-  ): Promise<{ access_token: string; user: User }> {
-    const { email, password } = loginDto;
-
-    // Find user
-    const user = await this.userRepository.findOne({
-      where: { email },
-      select: ["id", "email", "password", "name", "gender", "isActive"],
-    });
-
-    if (!user) {
-      throw new UnauthorizedException("Invalid credentials");
-    }
-
-    // Check password
-    const isPasswordValid = await bcrypt.compare(password, user.password);
-    if (!isPasswordValid) {
-      throw new UnauthorizedException("Invalid credentials");
-    }
-
-    // Check if user is active
-    if (!user.isActive) {
-      throw new UnauthorizedException("Account is deactivated");
-    }
+  async login(user: User): Promise<{ access_token: string; user: User }> {
+    // User is already validated by LocalStrategy
+    // Generate JWT and store in Redis
+    const payload = { sub: user.id, email: user.email };
+    const access_token = this.jwtService.sign(payload);
+    await this.redisService.setToken(
+      `access_token:${user.id}`,
+      access_token,
+      3600
+    ); // 1 hour
 
     // Set user online in Redis
     await this.redisService.setUserOnline(user.id);
 
     // Cache user profile
     await this.redisService.setUserProfile(user.id, user);
-
-    // Generate JWT
-    const payload = { sub: user.id, email: user.email };
-    const access_token = this.jwtService.sign(payload);
 
     // Remove password from response
     const { password: _, ...userWithoutPassword } = user;
@@ -110,6 +96,9 @@ export class AuthService {
   }
 
   async logout(userId: string): Promise<void> {
+    // Remove access token from Redis
+    await this.redisService.deleteToken(`access_token:${userId}`);
+
     // Set user offline in Redis
     await this.redisService.setUserOffline(userId);
 
@@ -118,12 +107,17 @@ export class AuthService {
   }
 
   async validateUser(email: string, password: string): Promise<User | null> {
+    console.log(`Validating user: ${email}`);
     const user = await this.userRepository.findOne({
       where: { email, isActive: true },
     });
-
-    if (user && (await bcrypt.compare(password, user.password))) {
-      return user;
+    console.log(`User found: ${!!user}`);
+    if (user) {
+      const isValid = await bcrypt.compare(password, user.password);
+      console.log(`Password valid: ${isValid}`);
+      if (isValid) {
+        return user;
+      }
     }
 
     return null;
@@ -132,6 +126,13 @@ export class AuthService {
   async refreshToken(user: User): Promise<{ access_token: string }> {
     const payload = { sub: user.id, email: user.email };
     const access_token = this.jwtService.sign(payload);
+
+    // Store new token in Redis
+    await this.redisService.setToken(
+      `access_token:${user.id}`,
+      access_token,
+      3600
+    ); // 1 hour
 
     return { access_token };
   }

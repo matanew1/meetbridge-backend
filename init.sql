@@ -32,7 +32,7 @@ $$ LANGUAGE plpgsql;
 
 -- Create function for geohash encoding (simplified version)
 -- In production, you might want to use a proper geohash library
-CREATE OR REPLACE FUNCTION encode_geohash(lat float, lon float, precision int DEFAULT 7)
+CREATE OR REPLACE FUNCTION encode_geohash(lat float, lon float, "precision" int DEFAULT 7)
 RETURNS text AS $$
 -- This is a simplified implementation. Consider using a proper geohash library for production
 DECLARE
@@ -49,7 +49,7 @@ DECLARE
 BEGIN
     -- Simplified geohash implementation
     -- For production, consider using PostgreSQL extensions or external libraries
-    FOR i IN 1..precision*5 LOOP
+    FOR i IN 1.."precision"*5 LOOP
         IF even THEN
             mid := (lon_min + lon_max) / 2;
             IF lon > mid THEN

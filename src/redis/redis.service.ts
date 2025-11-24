@@ -1,10 +1,22 @@
-import { Injectable, Inject } from "@nestjs/common";
+import { Injectable, Inject, OnModuleInit } from "@nestjs/common";
 import { CACHE_MANAGER } from "@nestjs/cache-manager";
 import { Cache } from "cache-manager";
+import Redis from "ioredis";
 
 @Injectable()
-export class RedisService {
+export class RedisService implements OnModuleInit {
+  private redisClient: Redis;
+
   constructor(@Inject(CACHE_MANAGER) private cacheManager: Cache) {}
+
+  onModuleInit() {
+    // Initialize direct Redis client for critical operations
+    this.redisClient = new Redis({
+      host: process.env.REDIS_HOST || "localhost",
+      port: parseInt(process.env.REDIS_PORT || "6379"),
+      password: process.env.REDIS_PASSWORD || undefined,
+    });
+  }
 
   async get<T>(key: string): Promise<T | undefined> {
     return this.cacheManager.get<T>(key);
@@ -20,6 +32,23 @@ export class RedisService {
 
   async reset(): Promise<void> {
     await this.cacheManager.clear();
+  }
+
+  // Direct Redis operations for critical data (tokens)
+  async setToken(
+    key: string,
+    value: string,
+    ttlSeconds: number
+  ): Promise<void> {
+    await this.redisClient.setex(key, ttlSeconds, value);
+  }
+
+  async getToken(key: string): Promise<string | null> {
+    return this.redisClient.get(key);
+  }
+
+  async deleteToken(key: string): Promise<void> {
+    await this.redisClient.del(key);
   }
 
   // User-specific cache methods
