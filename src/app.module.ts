@@ -82,13 +82,34 @@ import { MissedConnection } from "./entities/missed-connection.entity";
     // Redis Cache
     CacheModule.registerAsync({
       imports: [ConfigModule],
-      useFactory: (configService: ConfigService) => ({
-        store: redisStore,
-        host: configService.get("REDIS_HOST", "localhost"),
-        port: configService.get("REDIS_PORT", 6379),
-        password: configService.get("REDIS_PASSWORD"),
-        ttl: configService.get("CACHE_TTL", 300), // 5 minutes default
-      }),
+      useFactory: (configService: ConfigService) => {
+        const redisUrl = configService.get("REDIS_URL");
+        let redisConfig: any = {
+          store: redisStore,
+          ttl: configService.get("CACHE_TTL", 300), // 5 minutes default
+        };
+
+        if (redisUrl) {
+          // Parse REDIS_URL for production (e.g., Render)
+          const url = new URL(redisUrl);
+          redisConfig = {
+            ...redisConfig,
+            host: url.hostname,
+            port: parseInt(url.port, 10),
+            password: url.password,
+          };
+        } else {
+          // Use individual environment variables for development
+          redisConfig = {
+            ...redisConfig,
+            host: configService.get("REDIS_HOST", "localhost"),
+            port: configService.get("REDIS_PORT", 6379),
+            password: configService.get("REDIS_PASSWORD"),
+          };
+        }
+
+        return redisConfig;
+      },
       inject: [ConfigService],
       isGlobal: true,
     }),
