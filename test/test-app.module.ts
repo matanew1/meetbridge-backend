@@ -11,7 +11,6 @@ import { AuthService } from "../src/auth/auth.service";
 import { AuthController } from "../src/auth/auth.controller";
 import { UsersService } from "../src/users/users.service";
 import { RedisService } from "../src/redis/redis.service";
-import { LocalStrategy } from "../src/auth/local.strategy";
 import { JwtStrategy } from "../src/auth/jwt.strategy";
 
 // Entities
@@ -72,12 +71,6 @@ import { RegisterDto } from "../src/auth/dto/auth.dto";
     TypeOrmModule.forFeature([User]),
   ],
   controllers: [AuthController],
-  providers: [
-    AuthService,
-    UsersService,
-    RedisService,
-    LocalStrategy,
-    JwtStrategy,
-  ],
+  providers: [AuthService, UsersService, RedisService, JwtStrategy],
 })
 export class TestAppModule {}

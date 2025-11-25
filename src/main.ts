@@ -57,8 +57,7 @@ async function bootstrap() {
         scheme: "bearer",
         bearerFormat: "JWT",
         name: "JWT",
-        description:
-          "Enter JWT token from login/register response (tokens are stored in Redis)",
+        description: "Enter JWT access token from login/register response",
         in: "header",
       },
       "JWT-auth"
@@ -66,7 +65,7 @@ async function bootstrap() {
     .build();
 
   const document = SwaggerModule.createDocument(app, config);
-  SwaggerModule.setup("api", app, document, {
+  SwaggerModule.setup("api/docs", app, document, {
     swaggerOptions: {
       persistAuthorization: true,
       tagsSorter: "alpha",
@@ -97,7 +96,7 @@ async function bootstrap() {
   const port = process.env.PORT || 3001;
   await app.listen(port);
   console.log(`🚀 MeetBridge Backend running on: http://localhost:${port}`);
-  console.log(`📚 Swagger UI available at: http://localhost:${port}/api`);
+  console.log(`📚 Swagger UI available at: http://localhost:${port}/api/docs`);
 }
 
 bootstrap();

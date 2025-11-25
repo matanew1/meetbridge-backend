@@ -1,31 +1,29 @@
 import { Injectable, UnauthorizedException } from "@nestjs/common";
 import { PassportStrategy } from "@nestjs/passport";
-import { ExtractJwt, Strategy } from "passport-jwt";
-import { ConfigService } from "@nestjs/config";
+import { Strategy, ExtractJwt } from "passport-jwt";
 import { RedisService } from "../redis/redis.service";
 
 @Injectable()
 export class JwtStrategy extends PassportStrategy(Strategy) {
-  constructor(
-    private readonly configService: ConfigService,
-    private readonly redisService: RedisService
-  ) {
+  constructor(private redis: RedisService) {
     super({
       jwtFromRequest: ExtractJwt.fromAuthHeaderAsBearerToken(),
       ignoreExpiration: false,
-      secretOrKey: configService.get<string>("JWT_SECRET"),
+      secretOrKey: process.env.JWT_ACCESS_SECRET || "dev_secret",
+      passReqToCallback: true,
     });
   }
 
-  async validate(payload: any) {
-    // Check if token exists in Redis (additional security layer)
-    const storedToken = await this.redisService.getToken(
-      `access_token:${payload.sub}`
-    );
-    if (!storedToken) {
-      throw new UnauthorizedException("Token has been revoked");
+  async validate(req: any, payload: any) {
+    // Check if token is blacklisted
+    const token = ExtractJwt.fromAuthHeaderAsBearerToken()(req);
+    if (token) {
+      const client = this.redis.getClient();
+      const isBlacklisted = await client.get(`blacklist:${token}`);
+      if (isBlacklisted) {
+        throw new UnauthorizedException("Token has been revoked");
+      }
     }
-
-    return { id: payload.sub, email: payload.email };
+    return { userId: payload.sub, email: payload.email, role: payload.role };
   }
 }

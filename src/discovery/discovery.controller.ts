@@ -18,6 +18,7 @@ import { DiscoveryService, DiscoveryFilters } from "./discovery.service";
 import { JwtAuthGuard } from "../auth/jwt-auth.guard";
 
 @ApiTags("discovery")
+@ApiBearerAuth("JWT-auth")
 @Controller("discovery")
 @UseGuards(JwtAuthGuard)
 export class DiscoveryController {

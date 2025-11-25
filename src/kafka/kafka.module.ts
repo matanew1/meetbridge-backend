@@ -10,10 +10,13 @@ import { KafkaService } from "./kafka.service";
         transport: Transport.KAFKA,
         options: {
           client: {
-            brokers: [process.env.KAFKA_BROKERS || "localhost:29092"],
+            brokers: [process.env.KAFKA_BROKERS || "localhost:9092"],
+            logLevel: 2, // WARN level to reduce INFO logs, but keep ERROR and WARN
           },
           consumer: {
             groupId: "meetbridge-backend",
+            sessionTimeout: 30000,
+            rebalanceTimeout: 60000,
           },
         },
       },

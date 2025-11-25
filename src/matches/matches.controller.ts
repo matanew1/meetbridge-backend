@@ -18,6 +18,7 @@ import { MatchesService } from "./matches.service";
 import { JwtAuthGuard } from "../auth/jwt-auth.guard";
 
 @ApiTags("matches")
+@ApiBearerAuth("JWT-auth")
 @Controller("matches")
 @UseGuards(JwtAuthGuard)
 export class MatchesController {

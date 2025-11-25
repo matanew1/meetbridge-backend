@@ -30,6 +30,10 @@ export class RedisService implements OnModuleInit {
     await this.cacheManager.del(key);
   }
 
+  getClient(): Redis {
+    return this.redisClient;
+  }
+
   async reset(): Promise<void> {
     await this.cacheManager.clear();
   }
@@ -40,11 +44,14 @@ export class RedisService implements OnModuleInit {
     value: string,
     ttlSeconds: number
   ): Promise<void> {
+    console.log(`RedisService.setToken: key=${key}, ttl=${ttlSeconds}`);
     await this.redisClient.setex(key, ttlSeconds, value);
   }
 
   async getToken(key: string): Promise<string | null> {
-    return this.redisClient.get(key);
+    const token = await this.redisClient.get(key);
+    console.log(`RedisService.getToken: key=${key}, token=${!!token}`);
+    return token;
   }
 
   async deleteToken(key: string): Promise<void> {

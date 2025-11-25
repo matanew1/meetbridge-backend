@@ -7,6 +7,7 @@ import {
   IsDateString,
 } from "class-validator";
 import { ApiProperty, ApiPropertyOptional } from "@nestjs/swagger";
+import { UserResponseDto } from "../../users/dto/user-response.dto";
 
 export class RegisterDto {
   @ApiProperty({
@@ -94,58 +95,60 @@ export class LoginDto {
 
 export class AuthResponseDto {
   @ApiProperty({
-    description: "JWT access token (stored in Redis)",
+    description: "JWT access token",
     example: "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...",
   })
-  access_token: string;
+  accessToken: string;
 
   @ApiProperty({
-    description: "User information",
-    type: "object",
-    properties: {
-      id: { type: "string", example: "550e8400-e29b-41d4-a716-446655440000" },
-      email: { type: "string", example: "john.doe@example.com" },
-      name: { type: "string", example: "John Doe" },
-      dateOfBirth: { type: "string", format: "date", example: "1990-05-15" },
-      gender: { type: "string", example: "male" },
-      bio: { type: "string", example: "I love hiking and photography" },
-      interests: {
-        type: "array",
-        items: { type: "string" },
-        example: ["hiking", "photography"],
-      },
-      profilePictureUrl: {
-        type: "string",
-        example: "https://example.com/avatar.jpg",
-      },
-      isActive: { type: "boolean", example: true },
-      isProfileComplete: { type: "boolean", example: true },
-      lastActiveAt: {
-        type: "string",
-        format: "date-time",
-        example: "2025-11-24T10:30:00Z",
-      },
-      createdAt: {
-        type: "string",
-        format: "date-time",
-        example: "2025-11-24T09:00:00Z",
-      },
-      updatedAt: {
-        type: "string",
-        format: "date-time",
-        example: "2025-11-24T10:30:00Z",
-      },
-    },
+    description: "Opaque refresh token",
+    example: "refreshId.tokenSecret",
   })
-  user: any;
+  refreshToken: string;
+
+  @ApiProperty({
+    description: "Access token expiry time",
+    example: "900s",
+  })
+  expiresIn: string;
 }
 
 export class RefreshTokenResponseDto {
   @ApiProperty({
-    description: "New JWT access token (also set in HTTP-only cookie)",
+    description: "New JWT access token",
     example: "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...",
   })
-  access_token: string;
+  accessToken: string;
+
+  @ApiProperty({
+    description: "New opaque refresh token",
+    example: "newRefreshId.newTokenSecret",
+  })
+  refreshToken: string;
+
+  @ApiProperty({
+    description: "Access token expiry time",
+    example: "900s",
+  })
+  expiresIn: string;
+}
+
+export class RefreshDto {
+  @ApiProperty({
+    description: "Opaque refresh token",
+    example: "refreshId.tokenSecret",
+  })
+  @IsString()
+  refreshToken: string;
+}
+
+export class LogoutDto {
+  @ApiProperty({
+    description: "Opaque refresh token to invalidate",
+    example: "refreshId.tokenSecret",
+  })
+  @IsString()
+  refreshToken: string;
 }
 
 export class LogoutResponseDto {

@@ -1,5 +1,3 @@
-version: "3.8"
-
 services:
   # PostgreSQL Database with PostGIS
   postgres:
@@ -98,7 +96,7 @@ services:
       REDIS_HOST: redis
       REDIS_PORT: 6379
       KAFKA_BROKERS: kafka:29092
-      JWT_SECRET: meetbridge_secret_key
+      JWT_ACCESS_SECRET: meetbridge_secret_key
       FRONTEND_URL: http://localhost:3000
     volumes:
       - .:/app

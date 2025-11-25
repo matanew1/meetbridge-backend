@@ -22,6 +22,7 @@ import { CreateMissedConnectionDto } from "./dto/create-missed-connection.dto";
 import { JwtAuthGuard } from "../auth/jwt-auth.guard";
 
 @ApiTags("missed-connections")
+@ApiBearerAuth("JWT-auth")
 @Controller("missed-connections")
 @UseGuards(JwtAuthGuard)
 export class MissedConnectionsController {

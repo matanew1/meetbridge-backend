@@ -38,7 +38,6 @@ export class UsersService {
 
   async findAll(): Promise<User[]> {
     return this.userRepository.find({
-      where: { isActive: true },
       select: [
         "id",
         "name",
@@ -51,9 +50,7 @@ export class UsersService {
   }
 
   async findOne(id: string): Promise<User> {
-    const user = await this.userRepository.findOne({
-      where: { id, isActive: true },
-    });
+    const user = await this.userRepository.findOneBy({ id });
 
     if (!user) {
       throw new NotFoundException("User not found");
@@ -63,9 +60,7 @@ export class UsersService {
   }
 
   async findByEmail(email: string): Promise<User | null> {
-    return this.userRepository.findOne({
-      where: { email, isActive: true },
-    });
+    return this.userRepository.findOneBy({ email });
   }
 
   async update(id: string, updateUserDto: UpdateUserDto): Promise<User> {

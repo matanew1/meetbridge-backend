@@ -48,6 +48,9 @@ export class User {
   @Index()
   geohash: string;
 
+  @Column({ type: "varchar", length: 20, default: "user" })
+  role: string;
+
   @Column({ type: "boolean", default: true })
   isActive: boolean;
 

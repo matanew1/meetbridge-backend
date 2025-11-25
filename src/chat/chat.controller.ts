@@ -23,6 +23,7 @@ import { CreateMessageDto } from "./dto/create-message.dto";
 import { JwtAuthGuard } from "../auth/jwt-auth.guard";
 
 @ApiTags("chat")
+@ApiBearerAuth("JWT-auth")
 @Controller("chat")
 @UseGuards(JwtAuthGuard)
 export class ChatController {
