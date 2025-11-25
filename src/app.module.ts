@@ -34,25 +34,48 @@ import { MissedConnection } from "./entities/missed-connection.entity";
     // Database
     TypeOrmModule.forRootAsync({
       imports: [ConfigModule],
-      useFactory: (configService: ConfigService) => ({
-        type: "postgres",
-        host: configService.get("DB_HOST", "localhost"),
-        port: configService.get("DB_PORT", 5432),
-        username: configService.get("DB_USERNAME", "postgres"),
-        password: configService.get("DB_PASSWORD", "password"),
-        database: configService.get("DB_NAME", "meetbridge"),
-        entities: [
-          User,
-          Match,
-          Conversation,
-          Message,
-          Notification,
-          MissedConnection,
-        ],
-        synchronize: configService.get("NODE_ENV") !== "production",
-        logging: configService.get("NODE_ENV") === "development",
-        ssl: configService.get("NODE_ENV") === "production",
-      }),
+      useFactory: (configService: ConfigService) => {
+        const databaseUrl = configService.get("DATABASE_URL");
+        let dbConfig: any = {
+          type: "postgres",
+          entities: [
+            User,
+            Match,
+            Conversation,
+            Message,
+            Notification,
+            MissedConnection,
+          ],
+          synchronize: configService.get("NODE_ENV") !== "production",
+          logging: configService.get("NODE_ENV") === "development",
+          ssl: configService.get("NODE_ENV") === "production",
+        };
+
+        if (databaseUrl) {
+          // Parse DATABASE_URL for production (e.g., Render)
+          const url = new URL(databaseUrl);
+          dbConfig = {
+            ...dbConfig,
+            host: url.hostname,
+            port: parseInt(url.port, 10),
+            username: url.username,
+            password: url.password,
+            database: url.pathname.slice(1), // Remove leading slash
+          };
+        } else {
+          // Use individual environment variables for development
+          dbConfig = {
+            ...dbConfig,
+            host: configService.get("DB_HOST", "localhost"),
+            port: configService.get("DB_PORT", 5432),
+            username: configService.get("DB_USERNAME", "postgres"),
+            password: configService.get("DB_PASSWORD", "password"),
+            database: configService.get("DB_NAME", "meetbridge"),
+          };
+        }
+
+        return dbConfig;
+      },
       inject: [ConfigService],
     }),
 
